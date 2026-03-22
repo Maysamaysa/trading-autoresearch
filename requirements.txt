@@ -1,0 +1,13 @@
+ccxt>=4.3.0
+pandas>=2.0.0
+numpy>=1.26.0
+
+# MT5 bridge (Mac side)
+requests>=2.31.0
+
+# MT5 direct (Windows only)
+# MetaTrader5>=5.0.45   ← uncomment ถ้าใช้ Windows
+
+# MT5 bridge server (Windows side)
+# flask>=3.0.0          ← ติดตั้งบน Windows VPS เท่านั้น
+

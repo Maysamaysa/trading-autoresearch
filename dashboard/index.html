@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Autoresearch · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:    #080a0d;
+  --bg2:   #0d0f14;
+  --bg3:   #12151c;
+  --bg4:   #181b24;
+  --br:    #1c2030;
+  --br2:   #232840;
+  --tx:    #b8bdd0;
+  --tx2:   #6b7394;
+  --tx3:   #3a4060;
+  --green: #00e5a0;
+  --gdim:  rgba(0,229,160,.1);
+  --amber: #f5a623;
+  --adim:  rgba(245,166,35,.1);
+  --red:   #ff4d6d;
+  --rdim:  rgba(255,77,109,.1);
+  --blue:  #4d9fff;
+  --bdim:  rgba(77,159,255,.1);
+  --purple:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font-family:'DM Mono',monospace;font-size:13px;line-height:1.6;min-height:100vh}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--br);background:var(--bg2);position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;white-space:nowrap}
+.logo-lobster{font-size:20px;line-height:1}
+.logo em{color:var(--green);font-style:normal}
+.h-right{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.h-pill{display:flex;align-items:center;gap:5px;font-size:11px;background:var(--bg3);border:1px solid var(--br2);border-radius:20px;padding:3px 10px;color:var(--tx2)}
+.h-pill b{color:var(--tx)}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.live-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green);background:var(--gdim);border:1px solid rgba(0,229,160,.2);border-radius:20px;padding:3px 10px}
+
+/* ── LAYOUT ── */
+.page{padding:20px 24px;max-width:1440px;margin:0 auto}
+.sec-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--tx3);margin-bottom:10px;font-family:'Syne',sans-serif;font-weight:600}
+
+/* ── STAT CARDS ── */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat{background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:.15s border-color}
+.stat:hover{border-color:var(--br2)}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.s-green::after{background:var(--green)}
+.s-amber::after{background:var(--amber)}
+.s-red::after{background:var(--red)}
+.s-blue::after{background:var(--blue)}
+.stat-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:7px}
+.stat-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:5px}
+.s-green .stat-val{color:var(--green)}
+.s-amber .stat-val{color:var(--amber)}
+.s-red   .stat-val{color:var(--red)}
+.s-blue  .stat-val{color:var(--blue)}
+.stat-sub{font-size:11px;color:var(--tx2)}
+.stat-delta{font-size:11px;margin-top:3px}
+.up{color:var(--green)} .dn{color:var(--red)}
+
+/* ── PANELS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.panel{background:var(--bg2);border:1px solid var(--br);border-radius:10px;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--br)}
+.ph-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff}
+.ph-right{display:flex;align-items:center;gap:8px}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid}
+.badge-green{color:var(--green);border-color:rgba(0,229,160,.25);background:var(--gdim)}
+.badge-amber{color:var(--amber);border-color:rgba(245,166,35,.25);background:var(--adim)}
+.badge-blue {color:var(--blue); border-color:rgba(77,159,255,.25);background:var(--bdim)}
+.badge-gray {color:var(--tx2);  border-color:var(--br2);background:var(--bg3)}
+
+/* ── STRATEGY LIST ── */
+.strat-list{padding:12px;display:flex;flex-direction:column;gap:8px}
+.strat-card{background:var(--bg3);border:1px solid var(--br);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s all}
+.strat-card:hover{background:var(--bg4);border-color:var(--br2)}
+.strat-card.active{border-color:rgba(0,229,160,.35);background:rgba(0,229,160,.03)}
+.strat-rank{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--tx3);width:22px;text-align:center;flex-shrink:0}
+.strat-card.active .strat-rank{color:var(--green)}
+.strat-info{flex:1;min-width:0}
+.strat-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#fff;margin-bottom:1px}
+.strat-desc{font-size:11px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strat-nums{display:flex;gap:14px;flex-shrink:0}
+.sn{text-align:right}
+.sn-v{font-size:13px;font-weight:500}
+.sn-v.g{color:var(--green)} .sn-v.a{color:var(--amber)} .sn-v.r{color:var(--red)}
+.sn-l{font-size:10px;color:var(--tx3)}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sd-run{background:var(--green);animation:blink 1.5s infinite}
+.sd-new{background:var(--amber);animation:blink 1s infinite}
+.sd-idle{background:var(--tx3)}
+
+/* ── CHART WRAP ── */
+.chart-wrap{padding:14px 16px 8px;position:relative}
+.chart-wrap canvas{display:block}
+.chart-legend{display:flex;gap:14px;padding:0 16px 12px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2)}
+.leg-line{width:14px;height:2px;border-radius:2px}
+
+/* ── MODE SELECTOR ── */
+.mode-bar{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--br)}
+.mode-btn{padding:5px 13px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--br2);background:var(--bg3);color:var(--tx2);font-family:'DM Mono',monospace;transition:.15s all}
+.mode-btn:hover{color:var(--tx);border-color:var(--br2)}
+.mode-btn.active{background:var(--bg4);border-color:var(--green);color:var(--green)}
+
+/* ── LOG ── */
+.log-scroll{max-height:340px;overflow-y:auto}
+.log-scroll::-webkit-scrollbar{width:3px}
+.log-scroll::-webkit-scrollbar-thumb{background:var(--br2);border-radius:4px}
+.log-entry{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid var(--br);transition:.1s background}
+.log-entry:last-child{border-bottom:none}
+.log-entry:hover{background:var(--bg3)}
+.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ld-win{background:var(--green)} .ld-loss{background:var(--red)} .ld-neutral{background:var(--tx3)}
+.log-body{flex:1;min-width:0}
+.log-text{font-size:12px;color:var(--tx);line-height:1.4}
+.log-text strong{color:#fff}
+.log-tags{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
+.tag{font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--br2);color:var(--tx2);background:var(--bg3)}
+.tag.g{color:var(--green);border-color:rgba(0,229,160,.2);background:var(--gdim)}
+.tag.a{color:var(--amber);border-color:rgba(245,166,35,.2);background:var(--adim)}
+.tag.r{color:var(--red);  border-color:rgba(255,77,109,.2);background:var(--rdim)}
+.log-time{font-size:10px;color:var(--tx3);flex-shrink:0;margin-top:4px}
+
+/* ── WIN RATE SPARKLINE ── */
+.spark-row{display:flex;align-items:flex-end;gap:2px;height:44px;padding:0 16px 12px}
+.spark-bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;opacity:.75}
+
+/* ── TABLE ── */
+.cmp-table{width:100%;border-collapse:collapse}
+.cmp-table th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);padding:8px 14px;border-bottom:1px solid var(--br);font-weight:400}
+.cmp-table td{padding:9px 14px;border-bottom:1px solid var(--br);font-size:12px;color:var(--tx)}
+.cmp-table tr:last-child td{border-bottom:none}
+.cmp-table tr:hover td{background:var(--bg3)}
+.best-row td{background:rgba(0,229,160,.025)}
+.best-row td:first-child{border-left:2px solid var(--green)}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--br);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;color:var(--tx3);font-size:11px;flex-wrap:wrap;gap:8px}
+#clock{font-family:'DM Mono',monospace}
+
+/* ── EMPTY STATE ── */
+.empty{padding:32px;text-align:center;color:var(--tx3);font-size:12px}
+
+@media(max-width:900px){
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-lobster">🦞</span>
+    Trading<em>Autoresearch</em>
+  </div>
+  <div class="h-right">
+    <div class="h-pill" id="h-symbol"><b>—</b></div>
+    <div class="h-pill" id="h-tf"><b>—</b></div>
+    <div class="h-pill" id="h-days"><b>—</b> day backtest</div>
+    <div class="live-badge"><div class="pulse-dot"></div><span id="agent-count">loading…</span></div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- OVERVIEW STATS -->
+  <div class="sec-label" style="margin-top:4px">Overview</div>
+  <div class="stat-row">
+    <div class="stat s-green">
+      <div class="stat-label">Best win rate</div>
+      <div class="stat-val" id="s-wr">—</div>
+      <div class="stat-sub" id="s-wr-sub">—</div>
+      <div class="stat-delta up" id="s-wr-d"></div>
+    </div>
+    <div class="stat s-amber">
+      <div class="stat-label">Best Sharpe</div>
+      <div class="stat-val" id="s-sh">—</div>
+      <div class="stat-sub" id="s-sh-sub">—</div>
+    </div>
+    <div class="stat s-blue">
+      <div class="stat-label">Total experiments</div>
+      <div class="stat-val" id="s-exp">—</div>
+      <div class="stat-sub" id="s-exp-sub">across all strategies</div>
+    </div>
+    <div class="stat s-red">
+      <div class="stat-label">Lowest drawdown</div>
+      <div class="stat-val" id="s-dd">—</div>
+      <div class="stat-sub" id="s-dd-sub">—</div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD + EQUITY CHART -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">Strategy leaderboard</span>
+        <div class="ph-right">
+          <span class="badge badge-green" id="active-count">0 active</span>
+        </div>
+      </div>
+      <div class="strat-list" id="strat-list">
+        <div class="empty">No strategies found.<br>Run an experiment first.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">Equity curves</span>
+        <span class="badge badge-blue" id="eq-badge">90d backtest</span>
+      </div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="equityChart" height="200"></canvas>
+      </div>
+      <div class="chart-legend" id="eq-legend"></div>
+    </div>
+  </div>
+
+  <!-- WIN RATE PROGRESS + LOG -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">Win rate progress</span>
+        <span class="ph-right">
+          <select id="wr-select" style="background:var(--bg3);border:1px solid var(--br2);color:var(--tx);font-family:'DM Mono',monospace;font-size:11px;padding:2px 6px;border-radius:5px;cursor:pointer">
+          </select>
+        </span>
+      </div>
+      <div class="chart-wrap" style="height:140px">
+        <canvas id="progressChart" height="140"></canvas>
+      </div>
+      <div class="spark-row" id="spark-bars"></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">Experiment log</span>
+        <div class="ph-right">
+          <span class="badge badge-green" id="log-live">live</span>
+          <span class="badge badge-gray" id="log-count">0 runs</span>
+        </div>
+      </div>
+      <div class="log-scroll" id="log-list">
+        <div class="empty">Waiting for experiments…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPETITION MODE + TABLE -->
+  <div class="grid-3">
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Strategy comparison</span><span class="badge badge-amber">ranked by win rate</span></div>
+      <div style="overflow-x:auto">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th>Strategy</th><th>Win rate</th><th>Sharpe</th>
+              <th>Drawdown</th><th>Trades</th><th>Profit</th>
+            </tr>
+          </thead>
+          <tbody id="cmp-tbody"><tr><td colspan="6" class="empty">No data yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Competition mode</span></div>
+      <div class="mode-bar">
+        <button class="mode-btn active" id="m-parallel"    onclick="setMode('parallel')">parallel</button>
+        <button class="mode-btn"        id="m-capital"     onclick="setMode('capital_allocation')">capital alloc</button>
+        <button class="mode-btn"        id="m-vote"        onclick="setMode('majority_vote')">majority vote</button>
+      </div>
+      <div style="padding:14px 16px;font-size:12px;color:var(--tx2);line-height:1.7" id="mode-desc">
+        Each strategy researches independently in its own OpenClaw session. Agents don't know about each other. Best of N wins the overall leaderboard.
+      </div>
+      <div style="padding:0 16px 16px">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:6px">Start command</div>
+        <div style="background:var(--bg);border:1px solid var(--br2);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--green);word-break:break-all" id="mode-cmd">
+          python orchestrator.py --mode parallel --rounds 50
+        </div>
+      </div>
+      <div style="padding:0 16px 16px">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:6px">Ensemble results</div>
+        <div style="font-size:12px;color:var(--tx2)" id="ensemble-info">No ensemble data yet.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div>🦞 OpenClaw × autoresearch · <a href="https://github.com/openclaw/openclaw" style="color:var(--tx2);text-decoration:none">openclaw</a> · <a href="https://github.com/karpathy/autoresearch" style="color:var(--tx2);text-decoration:none">autoresearch</a></div>
+  <div id="clock"></div>
+  <div id="last-update" style="color:var(--tx3)">polling every 10s</div>
+</footer>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────
+const COLORS = ['#00e5a0','#f5a623','#4d9fff','#a78bfa','#ff6b6b','#2dd4bf'];
+let charts = {};
+let data   = null;
+let selectedStratForProgress = null;
+let currentMode = 'parallel';
+
+// ── MODE DESCRIPTIONS ──────────────────────────────────────
+const MODE_INFO = {
+  parallel: {
+    desc: "Each strategy researches independently in its own OpenClaw session. Agents don't know about each other. Best of N wins the overall leaderboard.",
+    cmd:  "python orchestrator.py --mode parallel --rounds 50",
+  },
+  capital_allocation: {
+    desc: "Capital is allocated proportionally to each strategy's win rate. Better strategies get a larger share. Weights rebalance every round automatically.",
+    cmd:  "python orchestrator.py --mode capital_allocation --rounds 20",
+  },
+  majority_vote: {
+    desc: "All strategies vote on each candle. A trade only happens when a majority (2/3+) agree on direction. Logged as a virtual ensemble strategy.",
+    cmd:  "python orchestrator.py --mode majority_vote --rounds 20",
+  },
+};
+
+function setMode(m) {
+  currentMode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('m-' + (m === 'capital_allocation' ? 'capital' : m === 'majority_vote' ? 'vote' : 'parallel'))
+    .classList.add('active');
+  document.getElementById('mode-desc').textContent = MODE_INFO[m].desc;
+  document.getElementById('mode-cmd').textContent  = MODE_INFO[m].cmd;
+}
+
+// ── CLOCK ──────────────────────────────────────────────────
+function tick() {
+  document.getElementById('clock').textContent =
+    new Date().toUTCString().replace(' GMT',' UTC');
+}
+tick(); setInterval(tick, 1000);
+
+// ── FETCH DATA ─────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const res = await fetch('/api/data');
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+    render(data);
+    document.getElementById('last-update').textContent =
+      'updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('last-update').textContent = 'server not reachable';
+  }
+}
+
+// ── RENDER ─────────────────────────────────────────────────
+function render(d) {
+  const strats = Object.values(d.strategies || {});
+  strats.sort((a,b) => (b.best.win_rate||0) - (a.best.win_rate||0));
+
+  renderHeader(d);
+  renderStats(strats);
+  renderLeaderboard(strats);
+  renderEquity(strats);
+  renderProgress(strats);
+  renderLog(strats);
+  renderTable(strats);
+  renderEnsemble(d);
+}
+
+function renderHeader(d) {
+  const strats = Object.values(d.strategies || {});
+  const active = strats.filter(s => (s.n_experiments || 0) > 0).length;
+  document.getElementById('agent-count').textContent =
+    active ? active + ' strateg' + (active===1?'y':'ies') + ' running' : 'no active agents';
+  document.getElementById('eq-badge').textContent = (d.backtest_days || 90) + 'd backtest';
+}
+
+function renderStats(strats) {
+  if (!strats.length) return;
+  const best  = strats[0];
+  const allExp = strats.reduce((s,x) => s + (x.n_experiments||0), 0);
+
+  // best win rate
+  const wr = best.best.win_rate || 0;
+  document.getElementById('s-wr').textContent     = (wr*100).toFixed(1) + '%';
+  document.getElementById('s-wr-sub').textContent = (best.name || '—') + ' · ' + (best.best.n_trades||'?') + ' trades';
+
+  // best sharpe (might be different strategy)
+  const bySharpe = [...strats].sort((a,b) => (b.best.sharpe||0)-(a.best.sharpe||0))[0];
+  document.getElementById('s-sh').textContent = (bySharpe.best.sharpe||0).toFixed(2);
+  document.getElementById('s-sh-sub').textContent = bySharpe.name || '—';
+
+  // total experiments
+  document.getElementById('s-exp').textContent = allExp;
+
+  // lowest drawdown
+  const byDD = [...strats].filter(s=>s.best.max_drawdown).sort((a,b)=>a.best.max_drawdown-b.best.max_drawdown)[0];
+  if (byDD) {
+    document.getElementById('s-dd').textContent = (byDD.best.max_drawdown*100).toFixed(1) + '%';
+    document.getElementById('s-dd-sub').textContent = byDD.name;
+  }
+}
+
+function renderLeaderboard(strats) {
+  const el = document.getElementById('strat-list');
+  document.getElementById('active-count').textContent = strats.length + ' active';
+  if (!strats.length) return;
+
+  el.innerHTML = strats.map((s, i) => {
+    const b   = s.best || {};
+    const wr  = b.win_rate || 0;
+    const sh  = b.sharpe   || 0;
+    const dd  = b.max_drawdown || 0;
+    const active = i === 0;
+    const sdClass = i === 0 ? 'sd-run' : i === 1 ? 'sd-new' : 'sd-idle';
+    return `
+    <div class="strat-card ${active?'active':''}" onclick="selectStrat('${s.name}', this)">
+      <div class="strat-rank">${i+1}</div>
+      <div class="strat-info">
+        <div class="strat-name">${s.name.replace(/_/g,' ')}</div>
+        <div class="strat-desc">${s.n_experiments||0} experiments</div>
+      </div>
+      <div class="strat-nums">
+        <div class="sn"><div class="sn-v g">${(wr*100).toFixed(1)}%</div><div class="sn-l">win rate</div></div>
+        <div class="sn"><div class="sn-v a">${sh.toFixed(2)}</div><div class="sn-l">sharpe</div></div>
+        <div class="sn"><div class="sn-v ${dd>0.15?'r':''}">${(dd*100).toFixed(1)}%</div><div class="sn-l">drawdown</div></div>
+      </div>
+      <div class="status-dot ${sdClass}"></div>
+    </div>`;
+  }).join('');
+}
+
+function selectStrat(name, el) {
+  document.querySelectorAll('.strat-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  selectedStratForProgress = name;
+  if (data) renderProgress(Object.values(data.strategies||{}));
+}
+
+function renderEquity(strats) {
+  const ctx = document.getElementById('equityChart').getContext('2d');
+
+  const datasets = strats.map((s,i) => ({
+    label:       s.name.replace(/_/g,' '),
+    data:        s.equity_curve || [],
+    borderColor: COLORS[i % COLORS.length],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    tension:     0.4,
+    fill:        false,
+  }));
+
+  const allPts = strats.flatMap(s => s.equity_curve||[]);
+  const labels = datasets[0]?.data.map((_,i)=>i) || [];
+
+  if (charts.equity) charts.equity.destroy();
+  charts.equity = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#12151c',borderColor:'#1c2030',borderWidth:1,
+        titleColor:'#6b7394',bodyColor:'#b8bdd0',
+        titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},
+        callbacks:{label:c=>' $'+Number(c.raw).toLocaleString(undefined,{maximumFractionDigits:0})}
+      }},
+      scales:{
+        x:{display:false},
+        y:{display:true,grid:{color:'#1c2030',drawBorder:false},border:{display:false},
+           ticks:{color:'#3a4060',font:{family:'DM Mono',size:10},
+                  callback:v=>'$'+(v/1000).toFixed(0)+'k'}}
+      },
+      animation:{duration:500}
+    }
+  });
+
+  const leg = document.getElementById('eq-legend');
+  leg.innerHTML = strats.map((s,i)=>`
+    <div class="leg-item">
+      <div class="leg-line" style="background:${COLORS[i%COLORS.length]}"></div>
+      ${s.name.replace(/_/g,' ')}
+    </div>`).join('');
+}
+
+function renderProgress(strats) {
+  const target = selectedStratForProgress || (strats[0]?.name);
+  const s = strats.find(x=>x.name===target) || strats[0];
+  if (!s) return;
+
+  // Update select
+  const sel = document.getElementById('wr-select');
+  sel.innerHTML = strats.map(x=>`<option value="${x.name}" ${x.name===target?'selected':''}>${x.name.replace(/_/g,' ')}</option>`).join('');
+  sel.onchange = e => { selectedStratForProgress = e.target.value; renderProgress(strats); };
+
+  const history = (s.win_rate_history||[]);
+  const ctx     = document.getElementById('progressChart').getContext('2d');
+  const labels  = history.map((_,i)=>'#'+(i+1));
+
+  if (charts.progress) charts.progress.destroy();
+  charts.progress = new Chart(ctx, {
+    type:'line',
+    data:{labels,datasets:[{
+      data:history,
+      borderColor:'#00e5a0',borderWidth:1.5,pointRadius:0,tension:0.3,
+      fill:{target:'origin',above:'rgba(0,229,160,.05)'},
+      segment:{borderColor:c=>c.p1.parsed.y>=c.p0.parsed.y?'#00e5a0':'#ff4d6d'}
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#12151c',borderColor:'#1c2030',borderWidth:1,
+        titleColor:'#6b7394',bodyColor:'#b8bdd0',
+        titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},
+        callbacks:{label:c=>` ${(c.raw*100).toFixed(1)}% win rate`}
+      }},
+      scales:{
+        x:{display:false},
+        y:{display:true,min:0,max:1,grid:{color:'#1c2030',drawBorder:false},border:{display:false},
+           ticks:{color:'#3a4060',font:{family:'DM Mono',size:10},
+                  callback:v=>(v*100).toFixed(0)+'%'}}
+      },
+      animation:{duration:400}
+    }
+  });
+
+  // Sparkline
+  const spark = document.getElementById('spark-bars');
+  const last  = history.slice(-30);
+  const maxV  = Math.max(...last, 0.01);
+  spark.innerHTML = last.map(v=>{
+    const h   = Math.max(3, (v/maxV)*44);
+    const col = v>0.60?'#00e5a0':v>0.50?'#f5a623':'#ff4d6d';
+    return `<div class="spark-bar" style="height:${h}px;background:${col}"></div>`;
+  }).join('');
+}
+
+function renderLog(strats) {
+  const all = strats.flatMap(s =>
+    (s.log||[]).map(e => ({...e, stratName: s.name}))
+  ).sort((a,b) => b.ts?.localeCompare(a.ts||''));
+
+  const total = strats.reduce((n,s)=>n+(s.n_experiments||0),0);
+  document.getElementById('log-count').textContent = total + ' runs';
+
+  const el = document.getElementById('log-list');
+  if (!all.length) {
+    el.innerHTML = '<div class="empty">Waiting for experiments…</div>';
+    return;
+  }
+
+  el.innerHTML = all.slice(0,60).map(e => {
+    const m   = e.metrics || {};
+    const ok  = e.improved;
+    const err = e.error;
+    const cls = err ? 'ld-neutral' : ok ? 'ld-win' : 'ld-loss';
+    const tag = err ? '' : ok
+      ? `<span class="tag g">✓ improved</span>`
+      : `<span class="tag r">✗ discarded</span>`;
+    const reason = !ok && m.reason ? `<span class="tag">${m.reason}</span>` : '';
+    const wr   = m.win_rate != null ? `<span class="tag">wr ${(m.win_rate*100).toFixed(1)}%</span>` : '';
+    const sh   = m.sharpe   != null ? `<span class="tag">sharpe ${m.sharpe.toFixed(2)}</span>` : '';
+    const ts   = e.ts ? new Date(e.ts).toLocaleTimeString() : '—';
+    const text = err
+      ? `<strong>[${e.stratName}·#${e.exp}]</strong> Error: ${e.error}`
+      : `<strong>[${(e.stratName||'').replace(/_/g,' ')}·#${e.exp||'?'}]</strong> ${ok?'New best found!':'No improvement.'}`;
+
+    return `
+    <div class="log-entry">
+      <div class="log-dot ${cls}"></div>
+      <div class="log-body">
+        <div class="log-text">${text}</div>
+        <div class="log-tags">${tag}${reason}${wr}${sh}</div>
+      </div>
+      <div class="log-time">${ts}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTable(strats) {
+  const tb = document.getElementById('cmp-tbody');
+  if (!strats.length) { tb.innerHTML='<tr><td colspan="6" class="empty">No data yet</td></tr>'; return; }
+
+  tb.innerHTML = strats.map((s,i) => {
+    const b  = s.best || {};
+    const wr = b.win_rate || 0;
+    const sh = b.sharpe   || 0;
+    const dd = b.max_drawdown || 0;
+    const pr = b.profit_pct || 0;
+    const fc = b.final_capital || 0;
+    return `
+    <tr class="${i===0?'best-row':''}">
+      <td><strong style="color:#fff">${s.name.replace(/_/g,' ')}</strong>${i===0?' <span class="badge badge-green">best</span>':''}</td>
+      <td style="color:var(--green)">${(wr*100).toFixed(1)}%</td>
+      <td style="color:${sh>2?'var(--amber)':'var(--tx)'}">${sh.toFixed(2)}</td>
+      <td style="color:${dd>0.15?'var(--red)':'var(--tx)'}">${(dd*100).toFixed(1)}%</td>
+      <td>${b.n_trades||'—'}</td>
+      <td style="color:${pr>0?'var(--green)':'var(--red)'}">${pr>0?'+':''}${(pr*100).toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEnsemble(d) {
+  const vl = d.ensemble_vote    || [];
+  const cl = d.ensemble_capital || [];
+  const el = document.getElementById('ensemble-info');
+  const parts = [];
+  if (vl.length) {
+    const last = vl[vl.length-1];
+    parts.push(`Majority vote: ${(last.metrics?.win_rate*100||0).toFixed(1)}% wr · ${vl.length} rounds`);
+  }
+  if (cl.length) {
+    const last = cl[cl.length-1];
+    parts.push(`Capital alloc: $${Number(last.combined_capital||0).toLocaleString(undefined,{maximumFractionDigits:0})} · ${cl.length} rounds`);
+  }
+  el.textContent = parts.join('\n') || 'No ensemble data yet.';
+}
+
+// ── POLL ───────────────────────────────────────────────────
+fetchData();
+setInterval(fetchData, 10_000);
+</script>
+</body>
+</html>

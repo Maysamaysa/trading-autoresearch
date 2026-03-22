@@ -1,0 +1,68 @@
+# .github/workflows/nightly.yml
+# Runs autoresearch every night on GitHub's free Linux runners.
+# Commits the best strategy back to the repo each morning.
+#
+# Setup:
+#   1. Add secrets in GitHub repo → Settings → Secrets:
+#      BROKER_API_KEY, BROKER_API_SECRET
+#   2. Push this repo to GitHub.
+#   3. The workflow runs automatically at 22:00 UTC nightly.
+
+name: Nightly autoresearch
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 22:00 UTC = 05:00 Bangkok time
+  workflow_dispatch:         # allow manual trigger from GitHub UI
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300     # 5 hours max
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write broker secrets to config
+        run: |
+          sed -i "s/YOUR_API_KEY_HERE/${{ secrets.BROKER_API_KEY }}/" config.py
+          sed -i "s/YOUR_API_SECRET_HERE/${{ secrets.BROKER_API_SECRET }}/" config.py
+
+      - name: Initialise strategy baselines (if first run)
+        run: |
+          for d in strategies/*/; do
+            [ -f "${d}best_strategy.py" ] || cp "${d}strategy.py" "${d}best_strategy.py"
+            [ -f "${d}best_score.json"  ] || echo '{"win_rate":0.0,"sharpe":0.0,"max_drawdown":1.0}' > "${d}best_score.json"
+            touch "${d}experiment_log.jsonl"
+          done
+
+      - name: Run parallel autoresearch (50 rounds per strategy)
+        run: python orchestrator.py --mode parallel --rounds 50
+
+      - name: Print leaderboard
+        run: |
+          echo "=== Leaderboard ==="
+          for d in strategies/*/; do
+            name=$(basename "$d")
+            score=$(cat "${d}best_score.json" 2>/dev/null || echo '{}')
+            echo "$name: $score"
+          done
+
+      - name: Commit best strategies back to repo
+        run: |
+          git config user.name  "autoresearch-bot"
+          git config user.email "bot@autoresearch"
+          git add strategies/*/best_strategy.py strategies/*/best_score.json strategies/*/experiment_log.jsonl
+          git diff --staged --quiet || git commit -m "chore: nightly autoresearch $(date -u '+%Y-%m-%d')"
+          git push

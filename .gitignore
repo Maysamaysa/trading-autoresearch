@@ -1,0 +1,12 @@
+# credentials — ห้าม commit ขึ้น git เด็ดขาด
+mt5_config.py
+config.py
+
+# logs และ experiment data (ขนาดใหญ่)
+*.jsonl
+__pycache__/
+*.pyc
+.DS_Store
+
+# temp files
+_tmp_*.py
