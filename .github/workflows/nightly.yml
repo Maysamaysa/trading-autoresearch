@@ -11,8 +11,8 @@
 name: Nightly autoresearch
 
 on:
-  schedule:
-    - cron: "0 22 * * *"   # 22:00 UTC = 05:00 Bangkok time
+  # schedule:
+    # - cron: "0 22 * * *"   # 22:00 UTC = 05:00 Bangkok time
   workflow_dispatch:         # allow manual trigger from GitHub UI
 
 jobs:
